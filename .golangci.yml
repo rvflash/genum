@@ -1,0 +1,23 @@
+linters:
+  enable-all: true
+  disable:
+    - wsl
+    - godox
+    - gomnd
+    - exhaustive
+    - exhaustivestruct
+    - nlreturn
+    - nakedret
+    - paralleltest
+    - wrapcheck
+
+issues:
+  exclude-use-default: false
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gomnd
+        - gochecknoglobals
+        - funlen
+        - dupl
+        - gosec
