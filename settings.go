@@ -99,7 +99,7 @@ func (s Settings) SrcFile() io.Reader {
 
 // Stringer implements the genum.Settings interface.
 func (s Settings) Stringer() bool {
-	return s.stringer || s.jsonMarshaler || s.xmlMarshaler || s.textMarshaler
+	return s.stringer
 }
 
 // StringFormater implements the genum.Settings interface.

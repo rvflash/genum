@@ -5,6 +5,7 @@
 package genum
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 )
@@ -114,4 +115,42 @@ func (k Kind) ValueFormat() string {
 		}
 	}
 	return fmt.Sprintf("%%[%d]%s", ValuePos, verb())
+}
+
+func strConvFormat(enumKind Kind) string {
+	switch {
+	case enumKind.IsInteger():
+		if enumKind.IsSigned() {
+			return fmt.Sprintf("strconv.FormatInt(%s, 10)", enumKind.Cast(shortName))
+		}
+		return fmt.Sprintf("strconv.FormatUint(%s, 10)", enumKind.Cast(shortName))
+	case enumKind.IsNumber():
+		return fmt.Sprintf("strconv.FormatFloat(%s, 'f', -1, 64)", enumKind.Cast(shortName))
+	default:
+		return enumKind.Cast(shortName)
+	}
+}
+
+func strConvParse(enumType string, enumKind Kind) string {
+	if enumKind == String {
+		return fmt.Sprintf("*%s = %s(%s)\n", shortName, enumType, strName)
+	}
+	method := func() string {
+		switch {
+		case enumKind.IsInteger():
+			if enumKind.IsSigned() {
+				return "strconv.ParseInt(%[1]s, 10, %[2]d)\n"
+			}
+			return "strconv.ParseUint(%[1]s, 10, %[2]d)\n"
+		default:
+			return "strconv.ParseFloat(%[1]s, 10)\n"
+		}
+	}
+	var buf bytes.Buffer
+	_, _ = fmt.Fprintf(&buf, "%[3]s, err := "+method(), strName, enumKind.BitSize(), mixedName)
+	_, _ = fmt.Fprintf(&buf, "if err != nil {\n")
+	_, _ = fmt.Fprintf(&buf, returnErr, enumType, enumKind.Name(), strName)
+	_, _ = fmt.Fprintf(&buf, "}\n")
+	_, _ = fmt.Fprintf(&buf, "*%s = %s(%s)\n", shortName, enumType, mixedName)
+	return strings.ReplaceAll(buf.String(), "%", "%%")
 }

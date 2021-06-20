@@ -11,10 +11,13 @@ import (
 )
 
 const (
-	increment  = "iota"
-	lineBreak  = "\n"
-	returnFmt  = "return fmt.Sprintf(%q, %s, %v, %q)\n"
 	shortName  = "e"
+	mixedName  = "v"
+	strName    = "s"
+	srcName    = "data"
+	increment  = "iota"
+	returnFmt  = "return fmt.Sprintf(%q, %s, %v, %q)\n"
+	returnErr  = "return fmt.Errorf(\"%s expects %s but got %%s\", %s)\n"
 	stringCmt  = "// String implements the fmt.Stringer interface.\n"
 	stringFunc = "func (%s %s) String() string {\n"
 	unnamed    = "_"
@@ -30,11 +33,14 @@ func Layout(s Settings, args []string) []Configurator {
 	}
 	cnf := []Configurator{
 		ParseEnums(s.SrcFile(), s.EnumTypeName(), s.EnumTypeKind(), s.JoinPrefix(), s.TrimPrefix(), s.Iota()),
-		PrintHeader(s.PackageName(), s.Stringer(), args),
+		PrintHeader(s.PackageName(), args, dependencies(s)),
 		PrintEnums(s.EnumTypeName(), s.EnumTypeKind(), s.Iota(), s.Commented()),
 	}
 	if s.Stringer() {
 		cnf = append(cnf, PrintStringer(s.StringFormater(), s.EnumTypeName(), s.EnumTypeKind()))
+	}
+	if s.JSONMarshaler() {
+		cnf = append(cnf, PrintJSONMarshaler(s.EnumTypeName(), s.EnumTypeKind()))
 	}
 	return append(cnf, WriteFile(s.DstFilename()))
 }
@@ -61,13 +67,13 @@ type Generator struct {
 
 func (g *Generator) advanceString(format, enumType string, enumKind Kind) error {
 	// Variable with enums names.
-	g.printf(lineBreak)
+	g.printf("\n")
 	g.printf("var _%sStrings = map[%s]string{\n", enumType, enumType)
 	for _, e := range g.enums {
 		g.printf("%s: %q,\n", e.Text, e.RawText)
 	}
 	g.printf("}\n")
-	g.printf(lineBreak)
+	g.printf("\n")
 	// String methods
 	g.printf(stringCmt)
 	g.printf(stringFunc, shortName, enumType)
@@ -81,6 +87,7 @@ func (g *Generator) advanceString(format, enumType string, enumKind Kind) error 
 		g.printf("return s\n")
 	}
 	g.printf("}\n")
+
 	return nil
 }
 
@@ -101,6 +108,7 @@ func (g *Generator) averageString(format, enumType string, enumKind Kind) error 
 	g.printDefaultStringReturn(enumKind, enumType)
 	g.printf("}\n")
 	g.printf("}\n")
+
 	return nil
 }
 
@@ -114,7 +122,7 @@ func (g *Generator) basicString(format, enumType string, enumKind Kind) error {
 		pos[p] = buf.Len()
 	}
 	// Constant with all enums names concatenated together.
-	g.printf(lineBreak)
+	g.printf("\n")
 	g.printf("const _%sStrings = %q\n", enumType, buf.String())
 	max := buf.Len()
 	buf.Reset()
@@ -125,9 +133,9 @@ func (g *Generator) basicString(format, enumType string, enumKind Kind) error {
 		_, _ = buf.WriteString(strconv.Itoa(v))
 	}
 	// Variable with positions of any enums names.
-	g.printf(lineBreak)
+	g.printf("\n")
 	g.printf("var _%sIndexes = [...]uint%d{0, %s}\n", enumType, unsignedSize(max), buf.String())
-	g.printf(lineBreak)
+	g.printf("\n")
 	// String methods
 	g.printf(stringCmt)
 	g.printf(stringFunc, shortName, enumType)
@@ -147,6 +155,7 @@ func (g *Generator) basicString(format, enumType string, enumKind Kind) error {
 		g.printf("return %s\n", rawText)
 	}
 	g.printf("}\n")
+
 	return nil
 }
 

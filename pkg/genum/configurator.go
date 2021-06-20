@@ -53,6 +53,34 @@ func ParseEnums(data io.Reader, enumType string, enumKind Kind, joinPrefix, trim
 	}
 }
 
+// PrintJSONMarshaler adds the methods to marshal and unmarshal the enum as JSON data.
+func PrintJSONMarshaler(enumType string, enumKind Kind) Configurator {
+	return func(g *Generator) error {
+		// json.Marshaler
+		g.printf("\n")
+		g.printf("// MarshalJSON implements the json.Marshaler interface.\n")
+		g.printf("func (e Enum) MarshalJSON() ([]byte, error) {\n")
+		g.printf("return json.Marshal(%s)", strConvFormat(enumKind))
+		g.printf("}\n")
+
+		// json.Unmarshaler
+		g.printf("// UnmarshalJSON implements the json.Unmarshaler interface.\n")
+		g.printf("func (e *Enum) UnmarshalJSON(data []byte) error{\n")
+		g.printf("var (\n")
+		g.printf("s string\n")
+		g.printf("err = json.Unmarshal(data, &s)\n")
+		g.printf(")\n")
+		g.printf("if err != nil {\n")
+		g.printf(returnErr, enumType, enumKind.Name(), srcName)
+		g.printf("}\n")
+		g.printf(strConvParse(enumType, enumKind))
+		g.printf("return nil\n")
+		g.printf("}\n")
+
+		return nil
+	}
+}
+
 // PrintStringer chooses the "best" methods regarding the data to manage the String method.
 func PrintStringer(format string, enumType string, enumKind Kind) Configurator {
 	return func(g *Generator) error {
@@ -89,7 +117,7 @@ func PrintEnums(enumType string, enumKind Kind, useIota, commented bool) Configu
 }
 
 // PrintHeader prints the go file header (package, import, etc.).
-func PrintHeader(pkg string, stringer bool, args []string) Configurator {
+func PrintHeader(pkg string, args []string, packages map[string]struct{}) Configurator {
 	return func(g *Generator) error {
 		if pkg == "" {
 			return fmt.Errorf("package RawName: %w", ErrMissing)
@@ -98,11 +126,14 @@ func PrintHeader(pkg string, stringer bool, args []string) Configurator {
 		g.printf("\n")
 		g.printf("package %s\n", pkg)
 		g.printf("\n")
-		if stringer {
-			g.printf("import %q\n", "fmt")
-			g.printf("\n")
+		if len(packages) == 0 {
+			return nil
 		}
-		g.printf("\n")
+		g.printf("import (\n")
+		for name := range packages {
+			g.printf("%q\n", name)
+		}
+		g.printf(")\n")
 
 		return nil
 	}

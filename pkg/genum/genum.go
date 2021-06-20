@@ -10,12 +10,29 @@ import (
 	"io"
 )
 
+// Pos represents a data position.
+type Pos int
+
 // Positions of each data in the String formater.
 const (
-	NamePos = iota + 1
+	NamePos Pos = iota + 1
 	ValuePos
 	TypePos
 )
+
+// String implements the fmt.Stringer interface.
+func (p Pos) String() string {
+	switch p {
+	case NamePos:
+		return "name"
+	case ValuePos:
+		return "value"
+	case TypePos:
+		return "kind"
+	default:
+		return "unknown"
+	}
+}
 
 // Command is the name of the command line to generate golang enums based on CSV data.
 const Command = "genum"
@@ -51,4 +68,21 @@ type Settings interface {
 	XMLMarshaler() bool
 	Stringer() bool
 	StringFormater() string
+}
+
+func dependencies(s Settings) map[string]struct{} {
+	if s == nil {
+		return nil
+	}
+	dep := make(map[string]struct{})
+	if s.JSONMarshaler() {
+		if s.EnumTypeKind().IsNumber() {
+			dep["strconv"] = struct{}{}
+		}
+		dep["encoding/json"] = struct{}{}
+	}
+	if s.Stringer() {
+		dep["fmt"] = struct{}{}
+	}
+	return dep
 }
