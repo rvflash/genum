@@ -68,6 +68,13 @@ const (
 ```
 
 
+## Installation
+
+```shell
+GO111MODULE=on go get github.com/rvflash/genum@vX.X.X
+```
+
+
 ## Usage
 
 ```shell

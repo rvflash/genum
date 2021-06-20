@@ -110,19 +110,19 @@ func enumIntegerValue(
 			if prevUint == 0 {
 				enumIota = increment // First value
 			}
-			return fmtNum(prevUint, prevSign), enumIota, prevUint + 1, curSign, nil
+			return fmtNum(prevUint, prevSign), enumIota, prevUint + 1, prevSign, nil
 		}
-		return zero, enumIota, prevUint, curSign, nil
+		return zero, enumIota, prevUint, prevSign, nil
 	}
 	curUint, curSign, err = parseNum(value, kind)
 	if err != nil {
-		return
+		return value, enumIota, curUint, curSign, err
 	}
 	if useIota {
 		enumIota = calculateIota(curUint, curSign, prevUint, prevSign)
 		curUint++
 	}
-	return
+	return value, enumIota, curUint, curSign, nil
 }
 
 func enumFloatValue(data []string) (string, error) {
