@@ -53,48 +53,6 @@ func ParseEnums(data io.Reader, enumType string, enumKind Kind, joinPrefix, trim
 	}
 }
 
-// PrintJSONMarshaler adds the methods to marshal and unmarshal the enum as JSON data.
-func PrintJSONMarshaler(enumType string, enumKind Kind) Configurator {
-	return func(g *Generator) error {
-		// json.Marshaler
-		g.printf("\n")
-		g.printf("// MarshalJSON implements the json.Marshaler interface.\n")
-		g.printf("func (e Enum) MarshalJSON() ([]byte, error) {\n")
-		g.printf("return json.Marshal(%s)", strConvFormat(enumKind))
-		g.printf("}\n")
-
-		// json.Unmarshaler
-		g.printf("// UnmarshalJSON implements the json.Unmarshaler interface.\n")
-		g.printf("func (e *Enum) UnmarshalJSON(data []byte) error{\n")
-		g.printf("var (\n")
-		g.printf("s string\n")
-		g.printf("err = json.Unmarshal(data, &s)\n")
-		g.printf(")\n")
-		g.printf("if err != nil {\n")
-		g.printf(returnErr, enumType, enumKind.Name(), srcName)
-		g.printf("}\n")
-		g.printf(strConvParse(enumType, enumKind))
-		g.printf("return nil\n")
-		g.printf("}\n")
-
-		return nil
-	}
-}
-
-// PrintStringer chooses the "best" methods regarding the data to manage the String method.
-func PrintStringer(format string, enumType string, enumKind Kind) Configurator {
-	return func(g *Generator) error {
-		switch g.mode() {
-		case basic:
-			return g.basicString(format, enumType, enumKind)
-		case average:
-			return g.averageString(format, enumType, enumKind)
-		default:
-			return g.advanceString(format, enumType, enumKind)
-		}
-	}
-}
-
 // PrintEnums prints the list of constants.
 func PrintEnums(enumType string, enumKind Kind, useIota, commented bool) Configurator {
 	return func(g *Generator) error {
@@ -134,6 +92,76 @@ func PrintHeader(pkg string, args []string, packages map[string]struct{}) Config
 			g.printf("%q\n", name)
 		}
 		g.printf(")\n")
+
+		return nil
+	}
+}
+
+// PrintJSONMarshaler adds methods to marshal and unmarshal the enum value as JSON data.
+func PrintJSONMarshaler(enumType string, enumKind Kind) Configurator {
+	return func(g *Generator) error {
+		// json.Marshaler
+		g.printf("\n")
+		g.printf("// MarshalJSON implements the json.Marshaler interface.\n")
+		g.printf("func (e %s) MarshalJSON() ([]byte, error) {\n", enumType)
+		g.printf("return json.Marshal(%s)", strConvFormat(enumKind))
+		g.printf("}\n")
+
+		// json.Unmarshaler
+		g.printf("// UnmarshalJSON implements the json.Unmarshaler interface.\n")
+		g.printf("func (e *%s) UnmarshalJSON(data []byte) error{\n", enumType)
+		g.printf("var (\n")
+		g.printf("s string\n")
+		g.printf("err = json.Unmarshal(data, &s)\n")
+		g.printf(")\n")
+		g.printf("if err != nil {\n")
+		g.printf(returnErr, enumType, enumKind.Name(), srcName)
+		g.printf("}\n")
+		g.printf(strConvParse(enumType, enumKind))
+		g.printf("return nil\n")
+		g.printf("}\n")
+
+		return nil
+	}
+}
+
+// PrintStringer chooses the "best" methods regarding the data to manage the String method.
+func PrintStringer(format string, enumType string, enumKind Kind) Configurator {
+	return func(g *Generator) error {
+		switch g.mode() {
+		case basic:
+			return g.basicString(format, enumType, enumKind)
+		case average:
+			return g.averageString(format, enumType, enumKind)
+		default:
+			return g.advanceString(format, enumType, enumKind)
+		}
+	}
+}
+
+// PrintXMLMarshaler adds methods to marshal and unmarshal the enum value as XML data.
+func PrintXMLMarshaler(enumType string, enumKind Kind) Configurator {
+	return func(g *Generator) error {
+		// json.Marshaler
+		g.printf("\n")
+		g.printf("// MarshalXML implements the xml.Marshaler interface.\n")
+		g.printf("func (e %s) MarshalXML(x *xml.Encoder, start xml.StartElement) error {\n", enumType)
+		g.printf("return x.EncodeElement(%s, start)", strConvFormat(enumKind))
+		g.printf("}\n")
+
+		// json.Unmarshaler
+		g.printf("// UnmarshalXML implements the xml.Unmarshaler interface.\n")
+		g.printf("func (e *%s) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error{\n", enumType)
+		g.printf("var (\n")
+		g.printf("s string\n")
+		g.printf("err = d.DecodeElement(&s, &start)\n")
+		g.printf(")\n")
+		g.printf("if err != nil {\n")
+		g.printf(returnErr, enumType, enumKind.Name(), strName)
+		g.printf("}\n")
+		g.printf(strConvParse(enumType, enumKind))
+		g.printf("return nil\n")
+		g.printf("}\n")
 
 		return nil
 	}

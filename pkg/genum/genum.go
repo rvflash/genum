@@ -81,6 +81,12 @@ func dependencies(s Settings) map[string]struct{} {
 		}
 		dep["encoding/json"] = struct{}{}
 	}
+	if s.XMLMarshaler() {
+		if s.EnumTypeKind().IsNumber() {
+			dep["strconv"] = struct{}{}
+		}
+		dep["encoding/xml"] = struct{}{}
+	}
 	if s.Stringer() {
 		dep["fmt"] = struct{}{}
 	}

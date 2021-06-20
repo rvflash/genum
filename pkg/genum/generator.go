@@ -42,6 +42,9 @@ func Layout(s Settings, args []string) []Configurator {
 	if s.JSONMarshaler() {
 		cnf = append(cnf, PrintJSONMarshaler(s.EnumTypeName(), s.EnumTypeKind()))
 	}
+	if s.XMLMarshaler() {
+		cnf = append(cnf, PrintXMLMarshaler(s.EnumTypeName(), s.EnumTypeKind()))
+	}
 	return append(cnf, WriteFile(s.DstFilename()))
 }
 
