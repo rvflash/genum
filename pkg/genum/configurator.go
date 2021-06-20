@@ -139,6 +139,23 @@ func PrintStringer(format string, enumType string, enumKind Kind) Configurator {
 	}
 }
 
+// PrintTextMarshaler adds methods to marshal and unmarshal the enum String value as a text.
+func PrintTextMarshaler(enumType string) Configurator {
+	return func(g *Generator) error {
+		// encoding.TextMarshaler
+		g.printf("\n")
+		g.printf("// MarshalText implements the encoding.TextMarshaler interface.\n")
+		g.printf("func (e %s) MarshalText() (text []byte, err error) {\n", enumType)
+		g.printf("return []byte(e.String()), nil")
+		g.printf("}\n")
+
+		// encoding.TextUnmarshaler
+		// todo rv
+
+		return nil
+	}
+}
+
 // PrintXMLMarshaler adds methods to marshal and unmarshal the enum value as XML data.
 func PrintXMLMarshaler(enumType string, enumKind Kind) Configurator {
 	return func(g *Generator) error {
