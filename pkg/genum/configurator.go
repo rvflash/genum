@@ -20,12 +20,13 @@ type Configurator func(g *Generator) error
 // ParseEnums reads the given source as a CSV and tries to create a list of constants based on it.
 func ParseEnums(data io.Reader, enumType string, enumKind Kind, joinPrefix, trimPrefix, useIota bool) Configurator {
 	return func(g *Generator) error {
-		r := csv.NewReader(data)
-		r.FieldsPerRecord = -1 // Records may have a variable number of fields.
 		var (
+			curIota           int64 = -1
 			curUint, prevUint uint64
 			curSign, prevSign bool
 		)
+		r := csv.NewReader(data)
+		r.FieldsPerRecord = -1 // Records may have a variable number of fields.
 		g.enums = make([]Enum, 0)
 		for {
 			d, err := r.Read()
@@ -40,8 +41,11 @@ func ParseEnums(data io.Reader, enumType string, enumKind Kind, joinPrefix, trim
 				Kind: enumKind,
 				Text: enumName(d, enumType, joinPrefix, trimPrefix),
 			}
+			if useIota {
+				curIota++
+			}
 			e.RawText, _ = field(d, namePos)
-			e.Value, e.Iota, curUint, curSign = enumValue(d, enumKind, useIota, prevUint, prevSign)
+			e.Value, e.Iota, curUint, curSign = enumValue(d, enumKind, curIota, prevUint, prevSign)
 			g.basic = enumKind.IsInteger() && absDiff(curUint, curSign, prevUint, prevSign) == 1
 			g.enums = append(g.enums, e)
 			prevUint, prevSign = curUint, curSign
@@ -140,7 +144,7 @@ func PrintStringer(format string, enumType string, enumKind Kind) Configurator {
 }
 
 // PrintTextMarshaler adds methods to marshal and unmarshal the enum String value as a text.
-func PrintTextMarshaler(enumType string) Configurator {
+func PrintTextMarshaler(format string, enumType string) Configurator {
 	return func(g *Generator) error {
 		// encoding.TextMarshaler
 		g.printf("\n")
@@ -150,7 +154,34 @@ func PrintTextMarshaler(enumType string) Configurator {
 		g.printf("}\n")
 
 		// encoding.TextUnmarshaler
-		// todo rv
+		g.printf("var _%sStrings = map[string]%s{\n", enumType, enumType)
+		var (
+			v   interface{}
+			err error
+		)
+		for k, e := range g.enums {
+			if format != NameFormat() {
+				v, err = e.ParseValue()
+				if err != nil {
+					return fmt.Errorf("enum value #%d: %w", k, err)
+				}
+				g.printf("%q: %s,\n", fmt.Sprintf(format, e.RawText, v, enumType), e.Text)
+			} else {
+				g.printf("%q: %s,\n", e.RawText, e.Text)
+			}
+		}
+		g.printf("}\n")
+		// encoding.TextUnmarshaler
+		g.printf("\n")
+		g.printf("// UnmarshalText implements the encoding.TextUnmarshaler interface.\n")
+		g.printf("func (e *%s) UnmarshalText(text []byte) error{\n", enumType)
+		g.printf("%s2, ok := _%sStrings[string(text)]\n", shortName, enumType)
+		g.printf("if !ok {\n")
+		g.printf("return fmt.Errorf(\"%%q is not a known %s\", text)\n", enumType)
+		g.printf("}\n")
+		g.printf("*%s = %s2\n", shortName, shortName)
+		g.printf("return nil\n")
+		g.printf("}\n")
 
 		return nil
 	}

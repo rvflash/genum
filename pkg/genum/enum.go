@@ -5,6 +5,7 @@
 package genum
 
 import (
+	"strconv"
 	"strings"
 )
 
@@ -43,4 +44,19 @@ func (e Enum) Format(pos int, useIota, commented bool) string {
 		p = append(p, []string{"//", "e", "=", e.Value}...)
 	}
 	return strings.Join(p, " ") + "\n"
+}
+
+// ParseValue tries to parse the Value as expected by its Kind.
+func (e Enum) ParseValue() (interface{}, error) {
+	switch {
+	case e.Kind.IsInteger():
+		if e.Kind.IsSigned() {
+			return strconv.ParseInt(e.Value, base10, e.Kind.BitSize())
+		}
+		return strconv.ParseUint(e.Value, base10, e.Kind.BitSize())
+	case e.Kind.IsNumber():
+		return strconv.ParseFloat(e.Value, base10)
+	default:
+		return e.Value, nil
+	}
 }

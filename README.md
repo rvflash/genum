@@ -41,7 +41,7 @@ Using `genum` flags, you can add implementation of the following interfaces:
 Typically, this process would be run using go generate, like this:
 
 ```go
-//go:generate genum -pkg say -type hi values.csv
+//go:generate genum -pkg ${GOPACKAGE} -type hi values.csv
 ```
 
 

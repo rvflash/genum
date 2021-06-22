@@ -31,29 +31,31 @@ func absDiff(cur uint64, curSign bool, prev uint64, prevSign bool) uint64 {
 	return uint64(cInt)
 }
 
-func calculateIota(cur uint64, curSign bool, prev uint64, prevSign bool) string {
-	var (
-		delta uint64
-		sign  bool
-	)
-	if curSign || prevSign {
-		c := int64(cur)
-		if curSign {
-			c *= -1
+func sumNumbers(sub bool, base uint64, baseSign bool, num uint64, numSign bool) (res uint64, resSign bool) {
+	if sub || baseSign || numSign {
+		b := int64(base)
+		if baseSign {
+			b *= -1
 		}
-		p := int64(prev)
-		if prevSign {
-			p *= -1
+		n := int64(num)
+		if numSign {
+			n *= -1
 		}
-		c -= p
-		sign = c < 0
-		if sign {
-			c *= -1
+		if sub {
+			b -= n
+		} else {
+			b += n
 		}
-		delta = uint64(c)
-	} else {
-		delta = cur - prev
+		if resSign = b < 0; resSign {
+			b *= -1
+		}
+		return uint64(b), resSign
 	}
+	return base + num, baseSign
+}
+
+func calculateIota(cur uint64, curSign bool, prev uint64, prevSign bool) string {
+	delta, sign := sumNumbers(true, cur, curSign, prev, prevSign)
 	if delta <= 1 {
 		if prev == 0 {
 			return increment
@@ -82,7 +84,7 @@ func enumName(data []string, enumType string, joinPrefix, trimPrefix bool) strin
 }
 
 func enumValue(
-	data []string, kind Kind, useIota bool, prevUint uint64, prevSign bool,
+	data []string, kind Kind, curIota int64, prevUint uint64, prevSign bool,
 ) (enumValue, enumIota string, curUint uint64, curSign bool) {
 	var err error
 	defer func() {
@@ -92,7 +94,7 @@ func enumValue(
 	}()
 	switch {
 	case kind.IsInteger():
-		enumValue, enumIota, curUint, curSign, err = enumIntegerValue(data, kind, useIota, prevUint, prevSign)
+		enumValue, enumIota, curUint, curSign, err = enumIntegerValue(data, kind, curIota, prevUint, prevSign)
 	case kind.IsNumber():
 		enumValue, err = enumFloatValue(data)
 	default:
@@ -102,25 +104,25 @@ func enumValue(
 }
 
 func enumIntegerValue(
-	data []string, kind Kind, useIota bool, prevUint uint64, prevSign bool,
+	data []string, kind Kind, curIota int64, prevUint uint64, prevSign bool,
 ) (enumValue, enumIota string, curUint uint64, curSign bool, err error) {
 	value, ok := field(data, valuePos)
 	if !ok {
-		if useIota {
-			if prevUint == 0 {
+		if curIota > -1 {
+			if curIota == 0 {
 				enumIota = increment // First value
 			}
-			return fmtNum(prevUint, prevSign), enumIota, prevUint + 1, prevSign, nil
+			return fmtNumber(prevUint+uint64(curIota), prevSign), enumIota, prevUint + 1, prevSign, nil
 		}
 		return zero, enumIota, prevUint, prevSign, nil
 	}
-	curUint, curSign, err = parseNum(value, kind)
+	curUint, curSign, err = parseNumber(value, kind)
 	if err != nil {
 		return value, enumIota, curUint, curSign, err
 	}
-	if useIota {
+	if curIota > -1 {
+		curUint, curSign = sumNumbers(true, curUint, curSign, uint64(curIota), false)
 		enumIota = calculateIota(curUint, curSign, prevUint, prevSign)
-		curUint++
 	}
 	return value, enumIota, curUint, curSign, nil
 }
@@ -145,7 +147,7 @@ func enumStringValue(data []string) string {
 	return fmt.Sprintf("%q", value)
 }
 
-func parseNum(value string, kind Kind) (abs uint64, sign bool, err error) {
+func parseNumber(value string, kind Kind) (abs uint64, sign bool, err error) {
 	if !kind.IsInteger() {
 		err = strconv.ErrRange
 		return
@@ -166,7 +168,7 @@ func parseNum(value string, kind Kind) (abs uint64, sign bool, err error) {
 	return uint64(i), sign, nil
 }
 
-func fmtNum(i uint64, sign bool) string {
+func fmtNumber(i uint64, sign bool) string {
 	if sign {
 		if i > math.MaxInt64 {
 			return zero

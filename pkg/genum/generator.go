@@ -43,7 +43,7 @@ func Layout(s Settings, args []string) []Configurator {
 		cnf = append(cnf, PrintJSONMarshaler(s.EnumTypeName(), s.EnumTypeKind()))
 	}
 	if s.TextMarshaler() {
-		cnf = append(cnf, PrintTextMarshaler(s.EnumTypeName()))
+		cnf = append(cnf, PrintTextMarshaler(s.StringFormater(), s.EnumTypeName()))
 	}
 	if s.XMLMarshaler() {
 		cnf = append(cnf, PrintXMLMarshaler(s.EnumTypeName(), s.EnumTypeKind()))
@@ -74,7 +74,7 @@ type Generator struct {
 func (g *Generator) advanceString(format, enumType string, enumKind Kind) error {
 	// Variable with enums names.
 	g.printf("\n")
-	g.printf("var _%sStrings = map[%s]string{\n", enumType, enumType)
+	g.printf("var _%sNames = map[%s]string{\n", enumType, enumType)
 	for _, e := range g.enums {
 		g.printf("%s: %q,\n", e.Text, e.RawText)
 	}
@@ -83,7 +83,7 @@ func (g *Generator) advanceString(format, enumType string, enumKind Kind) error 
 	// String methods
 	g.printf(stringCmt)
 	g.printf(stringFunc, shortName, enumType)
-	g.printf("s, ok := _%sStrings[%s]\n", enumType, shortName)
+	g.printf("s, ok := _%sNames[%s]\n", enumType, shortName)
 	g.printf("if !ok {\n")
 	g.printDefaultStringReturn(enumKind, enumType)
 	g.printf("}\n")
@@ -129,7 +129,7 @@ func (g *Generator) basicString(format, enumType string, enumKind Kind) error {
 	}
 	// Constant with all enums names concatenated together.
 	g.printf("\n")
-	g.printf("const _%sStrings = %q\n", enumType, buf.String())
+	g.printf("const _%sNames = %q\n", enumType, buf.String())
 	max := buf.Len()
 	buf.Reset()
 	for i, v := range pos {
@@ -154,7 +154,7 @@ func (g *Generator) basicString(format, enumType string, enumKind Kind) error {
 	g.printDefaultStringReturn(enumKind, enumType)
 	g.printf("}\n")
 
-	rawText := fmt.Sprintf("_%[1]sStrings[_%[1]sIndexes[%[2]s]:_%[1]sIndexes[%[2]s+1]]", enumType, shortName)
+	rawText := fmt.Sprintf("_%[1]sNames[_%[1]sIndexes[%[2]s]:_%[1]sIndexes[%[2]s+1]]", enumType, shortName)
 	if format != NameFormat() {
 		g.printf(returnFmt, format, rawText, enumKind.Cast(shortName), enumType)
 	} else {
