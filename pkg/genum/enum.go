@@ -55,7 +55,7 @@ func (e Enum) ParseValue() (interface{}, error) {
 		}
 		return strconv.ParseUint(e.Value, base10, e.Kind.BitSize())
 	case e.Kind.IsNumber():
-		return strconv.ParseFloat(e.Value, base10)
+		return strconv.ParseFloat(e.Value, e.Kind.BitSize())
 	default:
 		return e.Value, nil
 	}

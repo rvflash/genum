@@ -21,3 +21,8 @@ issues:
         - funlen
         - dupl
         - gosec
+        - maligned
+
+    - path: pkg/genum/helpers\.go
+      linters:
+        - nestif

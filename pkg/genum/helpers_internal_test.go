@@ -16,10 +16,10 @@ func TestSumNumbers(t *testing.T) {
 		dt  = map[string]struct {
 			// inputs
 			sub      bool
-			base     uint64
 			baseSign bool
-			num      uint64
 			numSign  bool
+			num      uint64
+			base     uint64
 			// outputs
 			out  uint64
 			sign bool

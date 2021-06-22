@@ -143,7 +143,7 @@ func strConvParse(enumType string, enumKind Kind) string {
 			}
 			return "strconv.ParseUint(%[1]s, 10, %[2]d)\n"
 		default:
-			return "strconv.ParseFloat(%[1]s, 10)\n"
+			return "strconv.ParseFloat(%[1]s, %[2]d)\n"
 		}
 	}
 	var buf bytes.Buffer
