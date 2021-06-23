@@ -11,19 +11,18 @@ import (
 )
 
 const (
-	shortName  = "e"
-	mixedName  = "v"
-	strName    = "s"
-	srcName    = "data"
-	increment  = "iota"
-	returnFmt  = "return fmt.Sprintf(%q, %s, %v, %q)\n"
-	returnErr  = "return fmt.Errorf(\"%s expects %s but got %%s\", %s)\n"
-	stringCmt  = "// String implements the fmt.Stringer interface.\n"
-	stringFunc = "func (%s %s) String() string {\n"
-	unnamed    = "_"
-	zero       = "0"
+	shortName      = "e"
+	mixedName      = "v"
+	strName        = "s"
+	srcName        = "data"
+	increment      = "iota"
+	returnNotFound = "return \"\", false\n"
+	returnErr      = "return fmt.Errorf(\"%s expects %s but got %%s\", %s)\n"
+	lookupFunc     = "func lookup%[1]s(%[2]s %[1]s) (%[3]s string, ok bool) {\n"
+	unnamed        = "_"
+	zero           = "0"
 
-	maxHumanScale = 1
+	maxHumanScale = 10
 )
 
 // Layout returns the generation configuration based on the given settings.
@@ -36,8 +35,14 @@ func Layout(s Settings, args []string) []Configurator {
 		PrintHeader(s.PackageName(), args, dependencies(s)),
 		PrintEnums(s.EnumTypeName(), s.EnumTypeKind(), s.Iota(), s.Commented()),
 	}
+	if s.Stringer() || s.Validator() {
+		cnf = append(cnf, PrintLookup(s.EnumTypeName(), s.EnumTypeKind()))
+	}
 	if s.Stringer() {
 		cnf = append(cnf, PrintStringer(s.StringFormater(), s.EnumTypeName(), s.EnumTypeKind()))
+	}
+	if s.Validator() {
+		cnf = append(cnf, PrintValidator(s.EnumTypeName()))
 	}
 	if s.JSONMarshaler() {
 		cnf = append(cnf, PrintJSONMarshaler(s.EnumTypeName(), s.EnumTypeKind()))
@@ -71,7 +76,7 @@ type Generator struct {
 	err   error
 }
 
-func (g *Generator) advanceString(format, enumType string, enumKind Kind) error {
+func (g *Generator) advanceString(enumType string) error {
 	// Variable with enums names.
 	g.printf("\n")
 	g.printf("var _%sNames = map[%s]string{\n", enumType, enumType)
@@ -79,46 +84,35 @@ func (g *Generator) advanceString(format, enumType string, enumKind Kind) error 
 		g.printf("%s: %q,\n", e.Text, e.RawText)
 	}
 	g.printf("}\n")
+
+	// Lookup method based on the precomputed map of Enums.
 	g.printf("\n")
-	// String methods
-	g.printf(stringCmt)
-	g.printf(stringFunc, shortName, enumType)
-	g.printf("s, ok := _%sNames[%s]\n", enumType, shortName)
-	g.printf("if !ok {\n")
-	g.printDefaultStringReturn(enumKind, enumType)
-	g.printf("}\n")
-	if format != NameFormat() {
-		g.printf(returnFmt, format, "s", enumKind.Cast(shortName), enumType)
-	} else {
-		g.printf("return s\n")
-	}
+	g.printf(lookupFunc, enumType, shortName, strName)
+	g.printf("%s, ok = _%sNames[%s]\n", strName, enumType, shortName)
+	g.printf("return %s, ok\n", strName)
 	g.printf("}\n")
 
 	return nil
 }
 
-func (g *Generator) averageString(format, enumType string, enumKind Kind) error {
-	// String methods (with human readable switch case)
-	g.printf(stringCmt)
-	g.printf(stringFunc, shortName, enumType)
+func (g *Generator) averageString(enumType string) error {
+	// Lookup method (with human readable switch case)
+	g.printf("\n")
+	g.printf(lookupFunc, enumType, shortName, strName)
 	g.printf("switch %s {\n", shortName)
 	for _, e := range g.enums {
 		g.printf("case %s:\n", e.Text)
-		if format != NameFormat() {
-			g.printf(returnFmt, format, e.RawText, e.Value, e.Type)
-		} else {
-			g.printf("return %q\n", e.RawText)
-		}
+		g.printf("return %q, true\n", e.RawText)
 	}
 	g.printf("default:\n")
-	g.printDefaultStringReturn(enumKind, enumType)
+	g.printf(returnNotFound)
 	g.printf("}\n")
 	g.printf("}\n")
 
 	return nil
 }
 
-func (g *Generator) basicString(format, enumType string, enumKind Kind) error {
+func (g *Generator) basicString(enumType string, enumKind Kind) error {
 	var (
 		buf = new(bytes.Buffer)
 		pos = make([]int, len(g.enums))
@@ -138,28 +132,23 @@ func (g *Generator) basicString(format, enumType string, enumKind Kind) error {
 		}
 		_, _ = buf.WriteString(strconv.Itoa(v))
 	}
+
 	// Variable with positions of any enums names.
 	g.printf("\n")
 	g.printf("var _%sIndexes = [...]uint%d{0, %s}\n", enumType, unsignedSize(max), buf.String())
+
+	// Lookup method based on a slice of contant names.
 	g.printf("\n")
-	// String methods
-	g.printf(stringCmt)
-	g.printf(stringFunc, shortName, enumType)
+	g.printf(lookupFunc, enumType, shortName, strName)
 	var guardRail string
 	if enumKind.IsSigned() && g.enums[0].Value != zero {
 		guardRail = shortName + " < 0 || "
 		g.printf("%s -= %s\n", shortName, g.enums[0].Value)
 	}
 	g.printf("if %s%s >= %s(len(_%sIndexes)-1) {\n", guardRail, shortName, enumType, enumType)
-	g.printDefaultStringReturn(enumKind, enumType)
+	g.printf(returnNotFound)
 	g.printf("}\n")
-
-	rawText := fmt.Sprintf("_%[1]sNames[_%[1]sIndexes[%[2]s]:_%[1]sIndexes[%[2]s+1]]", enumType, shortName)
-	if format != NameFormat() {
-		g.printf(returnFmt, format, rawText, enumKind.Cast(shortName), enumType)
-	} else {
-		g.printf("return %s\n", rawText)
-	}
+	g.printf("return _%[1]sNames[_%[1]sIndexes[%[2]s]:_%[1]sIndexes[%[2]s+1]], true\n", enumType, shortName)
 	g.printf("}\n")
 
 	return nil
@@ -185,16 +174,6 @@ func (g Generator) mode() mode {
 		return advance
 	}
 	return average
-}
-
-func (g *Generator) printDefaultStringReturn(enumKind Kind, enumType string) {
-	g.printf(
-		"return fmt.Sprintf(%q, %q, %v, %q)\n",
-		DefaultFormat(enumKind.ValueFormat()),
-		"",
-		enumKind.Cast(shortName),
-		enumType,
-	)
 }
 
 // printf formats according to a format specifier and writes to the Generator's buffer if no error has already occurred.

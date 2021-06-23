@@ -62,6 +62,7 @@ type Settings interface {
 	Commented() bool
 	JoinPrefix() bool
 	TrimPrefix() bool
+	Validator() bool
 	Iota() bool
 	JSONMarshaler() bool
 	TextMarshaler() bool

@@ -38,6 +38,14 @@ Using `genum` flags, you can add implementation of the following interfaces:
     func (e *T) UnmarshalXML(d *Decoder, start StartElement) error
 ```
 
+Or methods:
+
+* `IsValid` checks the validity of a constant.
+```go
+    func (e T) IsValid() bool
+```
+
+
 Typically, this process would be run using go generate, like this:
 
 ```go
@@ -100,3 +108,4 @@ It supports the following flags:
     * `-text`: implement the encoding.TextMarshaler and encoding.TextUnmarshaler interfaces
     * `-xml`: implement the xml.Marshaler and xml.Unmarshaler interfaces
     * `-comment`: add in comment the values of generated constants
+    * `-validator`: add a method "IsValid" to verify the set up of the constant

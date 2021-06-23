@@ -29,6 +29,7 @@ type Settings struct {
 	textMarshaler  bool
 	jsonMarshaler  bool
 	xmlMarshaler   bool
+	validator      bool
 	stringer       bool
 	stringFormater string
 }
@@ -67,6 +68,11 @@ func (s Settings) JoinPrefix() bool {
 // Iota implements the genum.Settings interface.
 func (s Settings) Iota() bool {
 	return s.iota && s.EnumTypeKind().IsInteger()
+}
+
+// Validator implements the genum.Settings interface.
+func (s Settings) Validator() bool {
+	return s.validator
 }
 
 // JSONMarshaler implements the genum.Settings interface.

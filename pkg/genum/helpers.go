@@ -112,7 +112,8 @@ func enumIntegerValue(
 			if curIota == 0 {
 				enumIota = increment // First value
 			}
-			return fmtNumber(prevUint+uint64(curIota), prevSign), enumIota, prevUint + 1, prevSign, nil
+			curUint, curSign = sumNumbers(true, prevUint, prevSign, uint64(curIota), prevSign)
+			return fmtNumber(curUint, curSign), enumIota, curUint + 1, curSign, nil
 		}
 		return zero, enumIota, prevUint, prevSign, nil
 	}

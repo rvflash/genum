@@ -129,16 +129,55 @@ func PrintJSONMarshaler(enumType string, enumKind Kind) Configurator {
 	}
 }
 
+// PrintValidator builds a method to check the validity of a constant.
+func PrintValidator(enumType string) Configurator {
+	return func(g *Generator) error {
+		g.printf("\n")
+		g.printf("// IsValid returns true if the %s is a known constant.\n", enumType)
+		g.printf("func (%s %s) IsValid() bool {\n", shortName, enumType)
+		g.printf("_, ok := lookup%s(%s)\n", enumType, shortName)
+		g.printf("return ok\n")
+		g.printf("}\n")
+
+		return nil
+	}
+}
+
 // PrintStringer chooses the "best" methods regarding the data to manage the String method.
 func PrintStringer(format string, enumType string, enumKind Kind) Configurator {
 	return func(g *Generator) error {
+		g.printf("\n")
+		g.printf("// String implements the fmt.Stringer interface.\n")
+		g.printf("func (%s %s) String() string {\n", shortName, enumType)
+		g.printf("s, ok := lookup%s(%s)\n", enumType, shortName)
+		g.printf("if !ok {")
+		g.printf(
+			"return fmt.Sprintf(%q, %q, %v, %q)\n",
+			DefaultFormat(enumKind.ValueFormat()), "", enumKind.Cast(shortName), enumType,
+		)
+		g.printf("}\n")
+		if format != NameFormat() {
+			g.printf("return fmt.Sprintf(%q, %s, %v, %q)\n", format, strName, enumKind.Cast(shortName), enumType)
+		} else {
+			g.printf("return %s\n", strName)
+		}
+		g.printf("}\n")
+
+		return nil
+	}
+}
+
+// PrintLookup adds a private method dedicated to get if exists the name of a constant with ok at true.
+// Otherwise, a standard failover name with ok at false are returned.
+func PrintLookup(enumType string, enumKind Kind) Configurator {
+	return func(g *Generator) error {
 		switch g.mode() {
 		case basic:
-			return g.basicString(format, enumType, enumKind)
+			return g.basicString(enumType, enumKind)
 		case average:
-			return g.averageString(format, enumType, enumKind)
+			return g.averageString(enumType)
 		default:
-			return g.advanceString(format, enumType, enumKind)
+			return g.advanceString(enumType)
 		}
 	}
 }
@@ -171,6 +210,7 @@ func PrintTextMarshaler(format string, enumType string) Configurator {
 			}
 		}
 		g.printf("}\n")
+
 		// encoding.TextUnmarshaler
 		g.printf("\n")
 		g.printf("// UnmarshalText implements the encoding.TextUnmarshaler interface.\n")

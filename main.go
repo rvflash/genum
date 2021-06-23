@@ -50,6 +50,8 @@ func main() {
 	flag.BoolVar(&s.xmlMarshaler, "xml", false, u)
 	u = "add in comment the values of generated constants"
 	flag.BoolVar(&s.comment, "comment", false, u)
+	u = "add a method \"IsValid\" to verify the set up of the constant"
+	flag.BoolVar(&s.validator, "validator", false, u)
 	flag.Parse()
 
 	err := s.ReadFrom(flag.Args(), os.Stdin)
