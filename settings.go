@@ -82,7 +82,7 @@ func (s Settings) JSONMarshaler() bool {
 
 // PackageName implements the genum.Settings interface.
 func (s Settings) PackageName() string {
-	return naming.FlatCase(s.packageName)
+	return naming.SnakeCase(s.packageName)
 }
 
 // ReadFrom allows to read from file path given as argument or the given reader.

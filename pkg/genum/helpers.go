@@ -63,9 +63,9 @@ func calculateIota(cur uint64, curSign bool, prev uint64, prevSign bool) string 
 		return ""
 	}
 	if sign {
-		return increment + " + -" + strconv.FormatUint(cur, base10)
+		return increment + " + -" + strconv.FormatUint(delta, base10)
 	}
-	return increment + " + " + strconv.FormatUint(cur, base10)
+	return increment + " + " + strconv.FormatUint(delta, base10)
 }
 
 func enumName(data []string, enumType string, joinPrefix, trimPrefix bool) string {
@@ -112,8 +112,8 @@ func enumIntegerValue(
 			if curIota == 0 {
 				enumIota = increment // First value
 			}
-			curUint, curSign = sumNumbers(true, prevUint, prevSign, uint64(curIota), prevSign)
-			return fmtNumber(curUint, curSign), enumIota, curUint + 1, curSign, nil
+			curUint, curSign = sumNumbers(false, prevUint, prevSign, 1, false)
+			return fmtNumber(curUint, curSign), enumIota, curUint, curSign, nil
 		}
 		return zero, enumIota, prevUint, prevSign, nil
 	}
@@ -122,8 +122,7 @@ func enumIntegerValue(
 		return value, enumIota, curUint, curSign, err
 	}
 	if curIota > -1 {
-		curUint, curSign = sumNumbers(true, curUint, curSign, uint64(curIota), false)
-		enumIota = calculateIota(curUint, curSign, prevUint, prevSign)
+		enumIota = calculateIota(curUint, curSign, uint64(curIota), false)
 	}
 	return value, enumIota, curUint, curSign, nil
 }

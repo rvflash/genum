@@ -121,11 +121,11 @@ func strConvFormat(enumKind Kind) string {
 	switch {
 	case enumKind.IsInteger():
 		if enumKind.IsSigned() {
-			return fmt.Sprintf("strconv.FormatInt(%s, 10)", enumKind.Cast(shortName))
+			return fmt.Sprintf("strconv.FormatInt(int64(%s), 10)", shortName)
 		}
-		return fmt.Sprintf("strconv.FormatUint(%s, 10)", enumKind.Cast(shortName))
+		return fmt.Sprintf("strconv.FormatUint(uint64(%s), 10)", shortName)
 	case enumKind.IsNumber():
-		return fmt.Sprintf("strconv.FormatFloat(%s, 'f', -1, 64)", enumKind.Cast(shortName))
+		return fmt.Sprintf("strconv.FormatFloat(float64(%s), 'f', -1, 64)", shortName)
 	default:
 		return enumKind.Cast(shortName)
 	}
