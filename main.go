@@ -23,9 +23,9 @@ func main() {
 	)
 	flag.StringVar(&s.packageName, "pkg", "", u)
 	u = "enum type name"
-	flag.StringVar(&s.enumType, "type", "Enum", u)
+	flag.StringVar(&s.enumType, "name", "Enum", u)
 	u = "enum base type"
-	flag.StringVar(&s.enumKind, "basic_type", "int", u)
+	flag.StringVar(&s.enumKind, "type", "int", u)
 	u = "declare sequentially growing numeric constants"
 	flag.BoolVar(&s.iota, "iota", true, u)
 	u = "output file name; default dst_dir/<snake_type>.go"
