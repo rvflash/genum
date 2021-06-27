@@ -22,6 +22,7 @@ type Settings struct {
 	packageName    string
 	enumType       string
 	enumKind       string
+	bitmask        bool
 	comment        bool
 	joinPrefix     bool
 	trimPrefix     bool
@@ -32,6 +33,11 @@ type Settings struct {
 	validator      bool
 	stringer       bool
 	stringFormater string
+}
+
+// Bitmask implements the genum.Settings interface.
+func (s Settings) Bitmask() bool {
+	return s.bitmask
 }
 
 // Commented implements the genum.Settings interface.
@@ -50,13 +56,13 @@ func (s Settings) DstFilename() string {
 	return filepath.Join(s.dstDir, naming.SnakeCase(s.enumType)+goFileExt)
 }
 
-// EnumTypeKind implements the genum.Settings interface.
-func (s Settings) EnumTypeKind() genum.Kind {
+// TypeKind implements the genum.Settings interface.
+func (s Settings) TypeKind() genum.Kind {
 	return genum.KindNamed(s.enumKind)
 }
 
-// EnumTypeName implements the genum.Settings interface.
-func (s Settings) EnumTypeName() string {
+// TypeName implements the genum.Settings interface.
+func (s Settings) TypeName() string {
 	return naming.PascalCase(s.enumType)
 }
 
@@ -67,7 +73,7 @@ func (s Settings) JoinPrefix() bool {
 
 // Iota implements the genum.Settings interface.
 func (s Settings) Iota() bool {
-	return s.iota && s.EnumTypeKind().IsInteger()
+	return s.iota && s.TypeKind().IsInteger()
 }
 
 // Validator implements the genum.Settings interface.

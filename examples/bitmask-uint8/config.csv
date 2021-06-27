@@ -1,0 +1,8 @@
+verbose
+config from disk
+database required
+logger activated
+debug
+float support
+recovery mode
+reboot on failure

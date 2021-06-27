@@ -31,6 +31,20 @@ func KindNamed(s string) Kind {
 	return Int
 }
 
+// KindUnsigned returns an integer unsigned large enough to hold this max value.
+func KindUnsigned(max int) Kind {
+	switch unsignedSize(max) {
+	case bits8:
+		return Uint8
+	case bits16:
+		return Uint16
+	case bits32:
+		return Uint32
+	default:
+		return Uint64
+	}
+}
+
 // Kind represents a golang type.
 type Kind uint8
 

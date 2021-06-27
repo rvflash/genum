@@ -13,7 +13,7 @@ import (
 	"github.com/rvflash/genum/pkg/genum"
 )
 
-const cmdFileName = iota + 1
+const cmdFileName = 1
 
 func main() {
 	var (
@@ -52,6 +52,9 @@ func main() {
 	flag.BoolVar(&s.comment, "comment", false, u)
 	u = "add a method \"IsValid\" to verify the set up of the constant"
 	flag.BoolVar(&s.validator, "validator", false, u)
+	u = "use integer to store configuration and provide bitwise operation.\n"
+	u += "Overwrite the enum base type with unsigned integer type with a size in bits based on the number of values"
+	flag.BoolVar(&s.bitmask, "bitmask", false, u)
 	flag.Parse()
 
 	err := s.ReadFrom(flag.Args(), os.Stdin)

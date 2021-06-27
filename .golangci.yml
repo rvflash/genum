@@ -26,3 +26,6 @@ issues:
     - path: pkg/genum/helpers\.go
       linters:
         - nestif
+    - path: main\.go
+      linters:
+        - funlen

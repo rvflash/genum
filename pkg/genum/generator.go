@@ -30,28 +30,34 @@ func Layout(s Settings, args []string) []Configurator {
 	if s == nil {
 		return nil
 	}
-	cnf := []Configurator{
-		ParseEnums(s.SrcFile(), s.EnumTypeName(), s.EnumTypeKind(), s.JoinPrefix(), s.TrimPrefix(), s.Iota()),
+	var cnf []Configurator
+	if s.Bitmask() {
+		cnf = append(cnf, ParseBitmask(s.SrcFile(), s.TypeName(), s.JoinPrefix(), s.TrimPrefix()))
+	} else {
+		cnf = append(cnf, ParseEnums(s.SrcFile(), s.TypeName(), s.TypeKind(), s.JoinPrefix(), s.TrimPrefix(), s.Iota()))
+	}
+	cnf = append(
+		cnf,
 		PrintHeader(s.PackageName(), args, dependencies(s)),
-		PrintEnums(s.EnumTypeName(), s.EnumTypeKind(), s.Iota(), s.Commented()),
+		PrintEnums(s.TypeName(), s.Iota(), s.Commented()),
+	)
+	if s.Bitmask() {
+		cnf = append(cnf, PrintBitmask(s.TypeName()))
 	}
 	if s.Stringer() || s.Validator() {
-		cnf = append(cnf, PrintLookup(s.EnumTypeName(), s.EnumTypeKind()))
+		cnf = append(cnf, PrintLookup(s.TypeName(), s.TypeKind()))
 	}
 	if s.Stringer() {
-		cnf = append(cnf, PrintStringer(s.StringFormater(), s.EnumTypeName(), s.EnumTypeKind()))
+		cnf = append(cnf, PrintStringer(s.StringFormater(), s.TypeName(), s.TypeKind()))
 	}
 	if s.Validator() {
-		cnf = append(cnf, PrintValidator(s.EnumTypeName()))
+		cnf = append(cnf, PrintValidator(s.TypeName()))
 	}
 	if s.JSONMarshaler() {
-		cnf = append(cnf, PrintJSONMarshaler(s.EnumTypeName(), s.EnumTypeKind()))
+		cnf = append(cnf, PrintJSONMarshaler(s.TypeName(), s.TypeKind()))
 	}
 	if s.TextMarshaler() {
-		cnf = append(cnf, PrintTextMarshaler(s.StringFormater(), s.EnumTypeName()))
-	}
-	if s.XMLMarshaler() {
-		cnf = append(cnf, PrintXMLMarshaler(s.EnumTypeName(), s.EnumTypeKind()))
+		cnf = append(cnf, PrintTextMarshaler(s.StringFormater(), s.TypeName()))
 	}
 	return append(cnf, WriteFile(s.DstFilename()))
 }

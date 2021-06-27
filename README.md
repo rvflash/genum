@@ -6,7 +6,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/rvflash/genum?)](https://goreportcard.com/report/github.com/rvflash/genum)
 
 `genum` parses if provided a comma-separated values (CSV) file, or the standard input by default to automate 
-the generation of a Go file, where CVS data becoming constant values of an enum type.
+the generation of a Go file, where CSV becoming constant values of an enum type.
 
 Given a name of a (signed or unsigned) integer, float or string type T and a package name, 
 `genum` will create a new self-contained Go source file, named by default `<T>.go` with only constant values.
@@ -15,6 +15,12 @@ Each CSV line is a new constant, where the first column is the name, and/or the 
 and the second if provided, is the value.   
 No check is made and records may have a variable number of fields. So we do not need to specify all values, even names.
 `_` is used in the case of a missing constant name. 
+
+## Features
+
+* Enum with a custom data type to store predefined values that are explicitly defined in the CVS input. 
+* Iota to simplify the code but values from the CVS force the iota to adapt.
+* Bitmask to store data inside one. A byte is composed of 8 bits of memory. A bit is a binary digit, either equal to 0 or 1.
 
 Using `genum` flags, you can add implementation of the following interfaces:
 
@@ -43,6 +49,29 @@ Or methods:
 * `IsValid` checks the validity of a constant.
 ```go
     func (e T) IsValid() bool
+```
+
+Or with bitmask enabled:
+
+* `Has` returns in success if this bitmask has this flag.
+```go
+    func (e T) Has(e2 T) bool
+```
+* `Set` sets this bitflag.
+```go
+    func (e *T) Set(e2 T) bool
+```
+* `Switch` only changes the bitflag if necessary. It returns true if the requested action has been done.
+```go
+    func (e *T) Switch(e2 T, on bool) (done bool)
+```
+* `Toggle` toggles this bitflag.
+```go
+    func (e *T) Toggle(e2 T) {
+```
+* `Unset` clears this bitflag.
+```go
+    func (e *T) Unset(e2 T) {
 ```
 
 
@@ -109,3 +138,5 @@ It supports the following flags:
     * `-xml`: implement the xml.Marshaler and xml.Unmarshaler interfaces
     * `-comment`: add in comment the values of generated constants
     * `-validator`: add a method "IsValid" to verify the set up of the constant
+    * `-bitmask`: use integer to store configuration and provide bitwise operation.
+	    Overwrite the enum base type with unsigned integer type, with a size in bits based on the number of values.

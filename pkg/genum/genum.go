@@ -57,8 +57,9 @@ type Settings interface {
 	DstFilename() string
 	SrcFile() io.Reader
 	PackageName() string
-	EnumTypeName() string
-	EnumTypeKind() Kind
+	TypeName() string
+	TypeKind() Kind
+	Bitmask() bool
 	Commented() bool
 	JoinPrefix() bool
 	TrimPrefix() bool
@@ -77,13 +78,13 @@ func dependencies(s Settings) map[string]struct{} {
 	}
 	dep := make(map[string]struct{})
 	if s.JSONMarshaler() {
-		if s.EnumTypeKind().IsNumber() {
+		if s.TypeKind().IsNumber() {
 			dep["strconv"] = struct{}{}
 		}
 		dep["encoding/json"] = struct{}{}
 	}
 	if s.XMLMarshaler() {
-		if s.EnumTypeKind().IsNumber() {
+		if s.TypeKind().IsNumber() {
 			dep["strconv"] = struct{}{}
 		}
 		dep["encoding/xml"] = struct{}{}

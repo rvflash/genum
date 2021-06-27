@@ -17,6 +17,38 @@ import (
 // Configurator must be implemented by any methods acted as an enum layout generator.
 type Configurator func(g *Generator) error
 
+// ParseBitmask reads the given source as a CSV and tries to create a bitmasks list.
+func ParseBitmask(data io.Reader, enumType string, joinPrefix, trimPrefix bool) Configurator {
+	return func(g *Generator) error {
+		r := csv.NewReader(data)
+		r.FieldsPerRecord = -1 // Records may have a variable number of fields.
+		g.enums = make([]Enum, 0)
+		var curIota uint64
+		for {
+			d, err := r.Read()
+			if err != nil {
+				if errors.Is(err, io.EOF) {
+					break
+				}
+				return fmt.Errorf("source file: %w", err)
+			}
+			curIota++
+			g.enums = append(g.enums, Enum{
+				Iota:    bitmaskIota(curIota),
+				Text:    enumName(d, enumType, joinPrefix, trimPrefix),
+				RawText: enumRawName(d),
+				Type:    enumType,
+				Value:   bitmaskValue(curIota),
+			})
+		}
+		enumKind := KindUnsigned(len(g.enums))
+		for k := range g.enums {
+			g.enums[k].Kind = enumKind
+		}
+		return nil
+	}
+}
+
 // ParseEnums reads the given source as a CSV and tries to create a list of constants based on it.
 func ParseEnums(data io.Reader, enumType string, enumKind Kind, joinPrefix, trimPrefix, useIota bool) Configurator {
 	return func(g *Generator) error {
@@ -37,14 +69,14 @@ func ParseEnums(data io.Reader, enumType string, enumKind Kind, joinPrefix, trim
 				return fmt.Errorf("source file: %w", err)
 			}
 			e := Enum{
-				Type: enumType,
-				Kind: enumKind,
-				Text: enumName(d, enumType, joinPrefix, trimPrefix),
+				Type:    enumType,
+				Kind:    enumKind,
+				Text:    enumName(d, enumType, joinPrefix, trimPrefix),
+				RawText: enumRawName(d),
 			}
 			if useIota {
 				curIota++
 			}
-			e.RawText, _ = field(d, namePos)
 			e.Value, e.Iota, curUint, curSign = enumValue(d, enumKind, curIota, prevUint, prevSign)
 			g.basic = enumKind.IsInteger() && absDiff(curUint, curSign, prevUint, prevSign) == 1
 			g.enums = append(g.enums, e)
@@ -57,15 +89,66 @@ func ParseEnums(data io.Reader, enumType string, enumKind Kind, joinPrefix, trim
 	}
 }
 
+// PrintBitmask prints related methods to bitmask operations.
+func PrintBitmask(enumType string) Configurator {
+	return func(g *Generator) error {
+		// Has method
+		g.printf("\n")
+		g.printf("// Has returns in success if this %s is set on it.\n", enumType)
+		g.printf("func (%[1]s %[2]s) Has(%[1]s2 %[2]s) bool {\n", shortName, enumType)
+		g.printf("return %[1]s&%[1]s2 != 0\n", shortName)
+		g.printf("}\n")
+
+		// Set method
+		g.printf("\n")
+		g.printf("// Set sets this %[1]s on the current %[1]s.\n", enumType)
+		g.printf("func (%[1]s *%[2]s) Set(%[1]s2 %[2]s)  {\n", shortName, enumType)
+		g.printf("*%[1]s |= %[1]s2\n", shortName)
+		g.printf("}\n")
+
+		// Switch method
+		g.printf("\n")
+		g.printf("// Switch only changes the %s value if necessary.\n", enumType)
+		g.printf("// It returns true if the requested action has been done.\n")
+		g.printf("func (%[1]s *%[2]s) Switch(%[1]s2 %[2]s, on bool) (done bool) {\n", shortName, enumType)
+		g.printf("if %[1]s.Has(%[1]s2) == on {\n", shortName)
+		g.printf("return false\n")
+		g.printf("}\n")
+		g.printf("if on {\n")
+		g.printf("%[1]s.Set(%[1]s2)\n", shortName)
+		g.printf("} else {\n")
+		g.printf("%[1]s.Unset(%[1]s2)\n", shortName)
+		g.printf("}\n")
+		g.printf("return true\n")
+		g.printf("}\n")
+
+		// Toggle method
+		g.printf("\n")
+		g.printf("// Toggle toggles this %s value.\n", enumType)
+		g.printf("func (%[1]s *%[2]s) Toggle(%[1]s2 %[2]s)  {\n", shortName, enumType)
+		g.printf("*%[1]s ^=  %[1]s2\n", shortName)
+		g.printf("}\n")
+
+		// Unset method
+		g.printf("\n")
+		g.printf("// Unset clears this %s value on the current one.\n", enumType)
+		g.printf("func (%[1]s *%[2]s) Unset(%[1]s2 %[2]s)  {\n", shortName, enumType)
+		g.printf("*%[1]s &^=  %[1]s2\n", shortName)
+		g.printf("}\n")
+
+		return nil
+	}
+}
+
 // PrintEnums prints the list of constants.
-func PrintEnums(enumType string, enumKind Kind, useIota, commented bool) Configurator {
+func PrintEnums(enumType string, useIota, commented bool) Configurator {
 	return func(g *Generator) error {
 		if enumType == "" {
 			return fmt.Errorf("enum type: %w", ErrMissing)
 		}
 		g.printf("\n")
 		g.printf("// %s is an enum.\n", enumType)
-		g.printf("type %s %s\n", enumType, enumKind.Name())
+		g.printf("type %s %s\n", enumType, g.enums[0].Kind.Name())
 		g.printf("\n")
 		g.printf("// List of known %s enums.\n", enumType)
 		g.printf("const (\n")
