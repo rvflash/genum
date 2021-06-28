@@ -10,6 +10,7 @@ linters:
     - nakedret
     - paralleltest
     - wrapcheck
+    - gofumpt
 
 issues:
   exclude-use-default: false
@@ -22,10 +23,9 @@ issues:
         - dupl
         - gosec
         - maligned
+        - goerr113
+        - testpackage
 
     - path: pkg/genum/helpers\.go
       linters:
         - nestif
-    - path: main\.go
-      linters:
-        - funlen

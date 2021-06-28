@@ -13,48 +13,51 @@ import (
 	"github.com/rvflash/genum/pkg/genum"
 )
 
+const (
+	bitmaskUsage = `use one integer to hold multiple flags, provide bitwise operations and 
+overwrite the enum base type with unsigned integer type (size in bits based on the number of values)`
+	commentUsage        = "add in comment the values of generated constants"
+	enumTypeUsage       = "enum type name"
+	enumKindUsage       = "enum base type"
+	iotaUsage           = "declare sequentially growing numeric constants"
+	jsonUsage           = "implement the json.Marshaler and json.Unmarshaler interfaces"
+	noPrefixUsage       = "trim the type name from the generated constant names"
+	outputUsage         = "output file name; default dst_dir/<snake_type>.go"
+	packageNameUsage    = "package name"
+	prefixUsage         = "add the type name as prefix of each generated constant names"
+	stringerUsage       = "implement the fmt.Stringer interface"
+	stringFormaterUsage = `format used as returned value by the fmt.Stringer method:
+[%d] represents the enum name
+[%d] represents the enum value
+[%d] represents the enum type`
+	textUsage      = "implement the encoding.TextMarshaler and encoding.TextUnmarshaler interfaces"
+	validatorUsage = `add a method "IsValid" to verify the set up of the constant`
+	xmlUsage       = "implement the xml.Marshaler and xml.Unmarshaler interfaces"
+)
+
 const cmdFileName = 1
 
 func main() {
 	var (
 		s = new(Settings)
 		w = log.New(os.Stderr, genum.Command+": ", 0)
-		u = "package name"
+		u = fmt.Sprintf(stringFormaterUsage, genum.NamePos, genum.ValuePos, genum.TypePos)
 	)
-	flag.StringVar(&s.packageName, "pkg", "", u)
-	u = "enum type name"
-	flag.StringVar(&s.enumType, "name", "Enum", u)
-	u = "enum base type"
-	flag.StringVar(&s.enumKind, "type", "int", u)
-	u = "declare sequentially growing numeric constants"
-	flag.BoolVar(&s.iota, "iota", true, u)
-	u = "output file name; default dst_dir/<snake_type>.go"
-	flag.StringVar(&s.dstDir, "output", "", u)
-	u = "implement the fmt.Stringer interface"
-	flag.BoolVar(&s.stringer, "stringer", false, u)
-	u = "format used by the fmt.Stringer method:\n"
-	u += "[%d] represents the enum name\n"
-	u += "[%d] represents the enum value\n"
-	u += "[%d] represents the enum type\n"
-	u = fmt.Sprintf(u, genum.NamePos, genum.ValuePos, genum.TypePos)
+	flag.StringVar(&s.packageName, "pkg", "", packageNameUsage)
+	flag.StringVar(&s.enumType, "name", genum.DefaultType, enumTypeUsage)
+	flag.StringVar(&s.enumKind, "type", genum.DefaultKind, enumKindUsage)
+	flag.StringVar(&s.dstDir, "output", "", outputUsage)
 	flag.StringVar(&s.stringFormater, "stringer_format", genum.NameFormat(), u)
-	u = "trim the type name from the generated constant names"
-	flag.BoolVar(&s.trimPrefix, "noprefix", false, u)
-	u = "add the type name as prefix of each generated constant names"
-	flag.BoolVar(&s.joinPrefix, "prefix", false, u)
-	u = "implement the json.Marshaler and json.Unmarshaler interfaces"
-	flag.BoolVar(&s.jsonMarshaler, "json", false, u)
-	u = "implement the encoding.TextMarshaler and encoding.TextUnmarshaler interfaces"
-	flag.BoolVar(&s.textMarshaler, "text", false, u)
-	u = "implement the xml.Marshaler and xml.Unmarshaler interfaces"
-	flag.BoolVar(&s.xmlMarshaler, "xml", false, u)
-	u = "add in comment the values of generated constants"
-	flag.BoolVar(&s.comment, "comment", false, u)
-	u = "add a method \"IsValid\" to verify the set up of the constant"
-	flag.BoolVar(&s.validator, "validator", false, u)
-	u = "use integer to store configuration and provide bitwise operation.\n"
-	u += "Overwrite the enum base type with unsigned integer type with a size in bits based on the number of values"
-	flag.BoolVar(&s.bitmask, "bitmask", false, u)
+	flag.BoolVar(&s.stringer, "stringer", false, stringerUsage)
+	flag.BoolVar(&s.trimPrefix, "noprefix", false, noPrefixUsage)
+	flag.BoolVar(&s.joinPrefix, "prefix", false, prefixUsage)
+	flag.BoolVar(&s.jsonMarshaler, "json", false, jsonUsage)
+	flag.BoolVar(&s.textMarshaler, "text", false, textUsage)
+	flag.BoolVar(&s.xmlMarshaler, "xml", false, xmlUsage)
+	flag.BoolVar(&s.validator, "validator", false, validatorUsage)
+	flag.BoolVar(&s.comment, "comment", false, commentUsage)
+	flag.BoolVar(&s.bitmask, "bitmask", false, bitmaskUsage)
+	flag.BoolVar(&s.iota, "iota", true, iotaUsage)
 	flag.Parse()
 
 	err := s.ReadFrom(flag.Args(), os.Stdin)

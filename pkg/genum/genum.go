@@ -34,8 +34,14 @@ func (p Pos) String() string {
 	}
 }
 
-// Command is the name of the command line to generate golang enums based on CSV data.
-const Command = "genum"
+const (
+	// Command is the name of the command line to generate golang enums based on CSV data.
+	Command = "genum"
+	// DefaultType is the default type name of an enum.
+	DefaultType = "Enum"
+	// DefaultKind is the default base type for an enum.
+	DefaultKind = "int"
+)
 
 // NameFormat returns the format used to return the enum name.
 func NameFormat() string {

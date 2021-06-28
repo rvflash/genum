@@ -13,8 +13,6 @@ import (
 	"github.com/rvflash/naming"
 )
 
-const goFileExt = ".go"
-
 // Settings contains all the options exposed by Genum.
 type Settings struct {
 	srcFile        io.Reader
@@ -22,6 +20,8 @@ type Settings struct {
 	packageName    string
 	enumType       string
 	enumKind       string
+	stringFormater string
+	stringer       bool
 	bitmask        bool
 	comment        bool
 	joinPrefix     bool
@@ -31,8 +31,6 @@ type Settings struct {
 	jsonMarshaler  bool
 	xmlMarshaler   bool
 	validator      bool
-	stringer       bool
-	stringFormater string
 }
 
 // Bitmask implements the genum.Settings interface.
@@ -45,9 +43,11 @@ func (s Settings) Commented() bool {
 	return s.comment
 }
 
+const goFileExt = ".go"
+
 // DstFilename implements the genum.Settings interface.
 func (s Settings) DstFilename() string {
-	if s.enumKind == "" {
+	if s.enumType == "" {
 		return ""
 	}
 	if s.dstDir == "" {
