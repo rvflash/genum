@@ -1,9 +1,9 @@
 # Genum
 
 [![GoDoc](https://godoc.org/github.com/rvflash/genum?status.svg)](https://godoc.org/github.com/rvflash/genum)
-[![Build Status](https://api.travis-ci.com/rvflash/genum.svg?branch=main)](https://travis-ci.com/rvflash/genum?branch=main)
+[![Build Status](https://github.com/rvflash/genum/workflows/build/badge.svg)](https://github.com/rvflash/genum/actions?workflow=build)
 [![Code Coverage](https://codecov.io/gh/rvflash/genum/branch/main/graph/badge.svg)](https://codecov.io/gh/rvflash/genum)
-[![Go Report Card](https://goreportcard.com/badge/github.com/rvflash/genum?)](https://goreportcard.com/report/github.com/rvflash/genum)
+[![Go Report Card](https://goreportcard.com/badge/github.com/rvflash/genum)](https://goreportcard.com/report/github.com/rvflash/genum)
 
 `genum` parses comma-separated values (CSV) from a file, or the standard input by default to automate 
 the generation of a Go file, where data becoming constant names and/or values of an enum type.
