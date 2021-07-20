@@ -5,9 +5,7 @@
 package main
 
 import (
-	"errors"
 	"io"
-	"io/fs"
 	"strings"
 	"testing"
 
@@ -30,15 +28,13 @@ func TestSettings_ReadFrom(t *testing.T) {
 			args   []string
 			reader io.Reader
 			// outputs
-			err error
+			failed bool
 		}{
-			"Default": {err: io.ErrClosedPipe},
-			"File not found": {args: []string{"testdata/oops.csv"},
-				err: &fs.PathError{
-					Op:   "open",
-					Path: "testdata/oops.csv",
-					Err:  errors.New("no such file or directory"),
-				}},
+			"Default": {failed: true},
+			"File not found": {
+				args:   []string{"testdata/oops.csv"},
+				failed: true,
+			},
 			"Stdin": {reader: strings.NewReader("csv")},
 			"File":  {args: []string{"testdata/hello.csv"}},
 		}
@@ -48,7 +44,7 @@ func TestSettings_ReadFrom(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			err := tt.opts.ReadFrom(tt.args, tt.reader)
-			are.True(err == nil || strings.HasPrefix(err.Error(), tt.err.Error())) // mismatch error message
+			are.Equal(err != nil, tt.failed) // unexpected error
 		})
 	}
 }
